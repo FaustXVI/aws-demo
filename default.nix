@@ -8,8 +8,7 @@ in stdenv.mkDerivation {
     buildInputs = [
         jq
         awscli
-        elmPackages.elm
-            nodejs
+        nodejs
    ];
     patchPhase = ''
         patchShebangs node_modules/webpack
