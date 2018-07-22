@@ -1,62 +1,62 @@
 {
-    "pipeline": {
-        "name": "simple-pipeline", 
-        "roleArn": "arn:aws:iam::932646752340:role/CodeDeploy-EC2-Instance-Profile", 
-        "artifactStore": {
-            "type": "S3"
-        }, 
-        "stages": [
-                "name": "Source",
-                "actions": [
-                    {
-                        "inputArtifacts": [],
-                        "name": "Source",
-                        "actionTypeId": {
-                            "category": "Source",
-                            "owner": "AWS",
-                            "version": "1",
-                            "provider": "CodeCommit"
-                        },
-                        "outputArtifacts": [
-                            {
-                                "name": "MyApp"
-                            }
-                        ],
-                        "configuration": {
-                            "PollForSourceChanges": "false",
-                            "BranchName": "master",
-                            "RepositoryName": "xadet-test"
-                        },
-                        "runOrder": 1
-                    }
-                ]
-            },
-            {
-                "name": "Staging",
-                "actions": [
-                    {
-                        "inputArtifacts": [
-                            {
-                                "name": "MyApp"
-                            }
-                        ],
-                        "name": "demos",
-                        "actionTypeId": {
-                            "category": "Deploy",
-                            "owner": "AWS",
-                            "version": "1",
-                            "provider": "CodeDeploy"
-                        },
-                        "outputArtifacts": [],
-                        "configuration": {
-                            "ApplicationName": "xadet-demo",
-                            "DeploymentGroupName": "demos"
-                        },
-                        "runOrder": 1
-                    }
-                ]
-            }
-        ], 
-        "version": 0
-    }
+    "name": "simple-pipeline", 
+    "roleArn": "arn:aws:iam::932646752340:role/CodeDeploy-EC2-Instance-Profile", 
+    "artifactStore": {
+        "type": "S3",
+        "location":"codepipeline-eu-west-2-517302819062"
+    }, 
+    "stages": [
+        {
+            "name": "Source",
+            "actions": [
+                {
+                    "inputArtifacts": [],
+                    "name": "Source",
+                    "actionTypeId": {
+                        "category": "Source",
+                        "owner": "AWS",
+                        "version": "1",
+                        "provider": "CodeCommit"
+                    },
+                    "outputArtifacts": [
+                        {
+                            "name": "MyApp"
+                        }
+                    ],
+                    "configuration": {
+                        "PollForSourceChanges": "false",
+                        "BranchName": "master",
+                        "RepositoryName": "xadet-test"
+                    },
+                    "runOrder": 1
+                }
+            ]
+        },
+        {
+            "name": "Staging",
+            "actions": [
+                {
+                    "inputArtifacts": [
+                        {
+                            "name": "MyApp"
+                        }
+                    ],
+                    "name": "demos",
+                    "actionTypeId": {
+                        "category": "Deploy",
+                        "owner": "AWS",
+                        "version": "1",
+                        "provider": "CodeDeploy"
+                    },
+                    "outputArtifacts": [],
+                    "configuration": {
+                        "ApplicationName": "xadet-demo",
+                        "DeploymentGroupName": "demos"
+                    },
+                    "runOrder": 1
+                }
+            ]
+        }
+    ], 
+    "version": 1
 }
