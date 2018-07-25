@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Deploy a simple Amazon Linux Instance and allow SSH connectivity.
+Description: Deploy a simple Amazon Linux Instance and allow SSH and web connectivity.
 Resources:
   Repo:
     Type: AWS::CodeCommit::Repository
@@ -113,6 +113,24 @@ Resources:
             Resource: '*'
       Roles:
         - Ref: EC2Role
+  PipelinePolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: PipelinePolicy
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 'codecommit:Get*'
+              - 'codecommit:Git*'
+              - 'codecommit:UploadArchive'
+              - 'codecommit:CancelUploadArchive'
+              - 's3:*'
+              - 'codedeploy:*'
+              - 'ec2:*'
+            Effect: Allow
+            Resource: '*'
+      Roles:
+        - Ref: PipelineRole
   EC2Profile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
@@ -131,6 +149,19 @@ Resources:
       Tags:
         - Key: Name
           Value: SSHAccessSG
+  AllowWebFromPublic:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow Web access from anywhere
+      SecurityGroupIngress:
+        - FromPort: '80'
+          ToPort: '80'
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+        - FromPort: '443'
+          ToPort: '443'
+          IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
   SimpleInstance:
     Type: 'AWS::EC2::Instance'
     Properties:
@@ -139,23 +170,22 @@ Resources:
       ImageId: ami-b8b45ddf
       SecurityGroupIds:
         - Ref: AllowSshFromPublic
+        - Ref: AllowWebFromPublic
       IamInstanceProfile:
         Ref: EC2Profile
       UserData:
         'Fn::Base64':
           'Fn::Join':
-            - |+
-
+            - '\n'
             - - '#!/bin/bash'
               - yum -y update
               - yum install -y ruby
               - yum install -y aws-cli
               - cd /home/ec2-user
-              - >-
-                aws s3 cp s3://aws-codedeploy-us-east-2/latest/install .
-                --region us-east-2
+              - aws s3 cp s3://aws-codedeploy-us-east-2/latest/install .  --region us-east-2
               - chmod +x ./install
               - ./install auto
+              - yum install -y httpd
       Tags:
         - Key: Name
           Value: xadetDemo
