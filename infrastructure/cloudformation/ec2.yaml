@@ -1,6 +1,77 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Deploy a simple Amazon Linux Instance and allow SSH connectivity.
 Resources:
+  Repo:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: xadet-demo
+      RepositoryDescription: Demo for aws
+  App:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: DemoAWS
+  DeployGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName:
+        Ref: App
+      DeploymentGroupName: xadet-demo
+      Ec2TagFilters:
+          - Key: Name
+            Value: xadetDemo
+            Type: KEY_AND_VALUE
+      ServiceRoleArn:
+        'Fn::GetAtt':
+          - PipelineRole
+          - Arn
+  PipelineBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: "xadet-pipeline-bucket"
+  Pipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: "DemoPipeline"
+      ArtifactStore:
+          Type: S3
+          Location:
+            Ref: PipelineBucket
+      RoleArn:
+        'Fn::GetAtt':
+          - PipelineRole
+          - Arn
+      Stages:
+        - Name: "Source"
+          Actions:
+            - Name: "Source"
+              ActionTypeId:
+                Category: "Source"
+                Owner: "AWS"
+                Version: "1"
+                Provider: "CodeCommit"
+              OutputArtifacts :
+                - Name: xadetApp
+              Configuration:
+                BranchName: master
+                RepositoryName:
+                  'Fn::GetAtt':
+                    - Repo
+                    - Name
+        - Name: "Staging"
+          Actions:
+            - Name: "Deploy"
+              ActionTypeId:
+                Category: "Deploy"
+                Owner: "AWS"
+                Version: "1"
+                Provider: "CodeDeploy"
+              InputArtifacts :
+                - Name: xadetApp
+              Configuration:
+                ApplicationName:
+                  Ref: App
+                DeploymentGroupName:
+                  Ref: DeployGroup
   EC2Role:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -11,6 +82,21 @@ Resources:
             Principal:
               Service:
                 - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+  PipelineRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codecommit.amazonaws.com
+                - codepipeline.amazonaws.com
+                - codedeploy.amazonaws.com
             Action:
               - 'sts:AssumeRole'
       Path: /
@@ -73,11 +159,6 @@ Resources:
       Tags:
         - Key: Name
           Value: xadetDemo
-  Repo:
-    Type: AWS::CodeCommit::Repository
-    Properties:
-      RepositoryName: xadet-demo
-      RepositoryDescription: Demo for aws
 Outputs:
   CloneUrl:
     Value:
