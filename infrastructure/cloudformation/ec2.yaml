@@ -6,6 +6,21 @@ Resources:
     Properties:
       RepositoryName: xadet-demo
       RepositoryDescription: Demo for aws
+  RepoTriggersPipeline:
+    Type: "AWS::CodePipeline::Webhook"
+    Properties:
+      Authentication: IP
+      AuthenticationConfiguration: 
+        AllowedIPRange: 0.0.0.0/0
+      Filters: []
+      Name: "Run-pipeline"
+      TargetAction: "Source"
+      TargetPipeline:
+          Ref: Pipeline
+      TargetPipelineVersion:
+          'Fn::GetAtt' :
+              - Pipeline
+              - Version
   App:
     Type: AWS::CodeDeploy::Application
     Properties:
