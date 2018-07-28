@@ -21,28 +21,6 @@ Resources:
           'Fn::GetAtt' :
               - Pipeline
               - Version
-  App:
-    Type: AWS::CodeDeploy::Application
-    Properties:
-      ApplicationName: !Sub ${AWS::StackName}
-  DeployGroup:
-    Type: AWS::CodeDeploy::DeploymentGroup
-    Properties:
-      ApplicationName:
-        Ref: App
-      DeploymentGroupName: !Sub ${AWS::StackName}
-      Ec2TagFilters:
-          - Key: Name
-            Value: !Sub ${AWS::StackName}
-            Type: KEY_AND_VALUE
-      ServiceRoleArn:
-        'Fn::GetAtt':
-          - PipelineRole
-          - Arn
-  PipelineBucket:
-    Type: "AWS::S3::Bucket"
-    Properties:
-      BucketName: !Sub ${AWS::StackName}
   Pipeline:
     Type: "AWS::CodePipeline::Pipeline"
     Properties:
@@ -87,6 +65,55 @@ Resources:
                   Ref: App
                 DeploymentGroupName:
                   Ref: DeployGroup
+  App:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub ${AWS::StackName}
+  DeployGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName:
+        Ref: App
+      DeploymentGroupName: !Sub ${AWS::StackName}
+      Ec2TagFilters:
+          - Key: Name
+            Value: !Sub ${AWS::StackName}
+            Type: KEY_AND_VALUE
+      ServiceRoleArn:
+        'Fn::GetAtt':
+          - PipelineRole
+          - Arn
+  SimpleInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      KeyName: codestar
+      InstanceType: t2.micro
+      ImageId: ami-b8b45ddf
+      SecurityGroupIds:
+        - Ref: AllowSshFromPublic
+        - Ref: AllowWebFromPublic
+      IamInstanceProfile:
+        Ref: EC2Profile
+      UserData:
+        'Fn::Base64':
+          !Sub |
+            #!/bin/bash
+            yum -y update
+            yum install -y ruby
+            yum install -y aws-cli
+            cd /home/ec2-user
+            aws s3 cp s3://aws-codedeploy-us-east-2/latest/install .  --region us-east-2
+            chmod +x ./install
+            ./install auto
+            yum install -y httpd
+            service httpd start
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}
+  PipelineBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Sub ${AWS::StackName}
   EC2Role:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -174,33 +201,6 @@ Resources:
           ToPort: '443'
           IpProtocol: tcp
           CidrIp: 0.0.0.0/0
-  SimpleInstance:
-    Type: 'AWS::EC2::Instance'
-    Properties:
-      KeyName: codestar
-      InstanceType: t2.micro
-      ImageId: ami-b8b45ddf
-      SecurityGroupIds:
-        - Ref: AllowSshFromPublic
-        - Ref: AllowWebFromPublic
-      IamInstanceProfile:
-        Ref: EC2Profile
-      UserData:
-        'Fn::Base64':
-          !Sub |
-            #!/bin/bash
-            yum -y update
-            yum install -y ruby
-            yum install -y aws-cli
-            cd /home/ec2-user
-            aws s3 cp s3://aws-codedeploy-us-east-2/latest/install .  --region us-east-2
-            chmod +x ./install
-            ./install auto
-            yum install -y httpd
-            service httpd start
-      Tags:
-        - Key: Name
-          Value: !Sub ${AWS::StackName}
 Outputs:
   CloneUrl:
     Value:
