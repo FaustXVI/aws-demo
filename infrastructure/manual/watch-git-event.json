@@ -1,1 +1,0 @@
-{"source":["aws.codecommit"],"detail-type":["CodeCommit Repository State Change"],"resources":["arn:aws:codecommit:eu-west-2:932646752340:xadet-test"],"detail":{"event":["referenceCreated","referenceUpdated"],"referenceType":["branch"],"referenceName":["master"]}}

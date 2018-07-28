@@ -1,7 +1,0 @@
-[
-    {
-        "RoleArn": "arn:aws:iam::932646752340:role/CodeDeploy-EC2-Instance-Profile", 
-        "Id": "codepipeline-test", 
-        "Arn": "arn:aws:codepipeline:eu-west-2:932646752340:simple-pipeline"
-    }
-]
