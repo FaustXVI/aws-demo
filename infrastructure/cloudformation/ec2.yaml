@@ -1,10 +1,10 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Deploy a simple Amazon Linux Instance and allow SSH and web connectivity.
+Description: Create a continuous deployement pipeline with ssh and web access
 Resources:
   Repo:
     Type: AWS::CodeCommit::Repository
     Properties:
-      RepositoryName: xadet-demo
+      RepositoryName: !Sub ${AWS::StackName}
       RepositoryDescription: Demo for aws
   RepoTriggersPipeline:
     Type: "AWS::CodePipeline::Webhook"
@@ -13,7 +13,7 @@ Resources:
       AuthenticationConfiguration: 
         AllowedIPRange: 0.0.0.0/0
       Filters: []
-      Name: "Run-pipeline"
+      Name: !Sub ${AWS::StackName}-triggers-pipeline
       TargetAction: "Source"
       TargetPipeline:
           Ref: Pipeline
@@ -24,16 +24,16 @@ Resources:
   App:
     Type: AWS::CodeDeploy::Application
     Properties:
-      ApplicationName: DemoAWS
+      ApplicationName: !Sub ${AWS::StackName}
   DeployGroup:
     Type: AWS::CodeDeploy::DeploymentGroup
     Properties:
       ApplicationName:
         Ref: App
-      DeploymentGroupName: xadet-demo
+      DeploymentGroupName: !Sub ${AWS::StackName}
       Ec2TagFilters:
           - Key: Name
-            Value: xadetDemo
+            Value: !Sub ${AWS::StackName}
             Type: KEY_AND_VALUE
       ServiceRoleArn:
         'Fn::GetAtt':
@@ -42,11 +42,11 @@ Resources:
   PipelineBucket:
     Type: "AWS::S3::Bucket"
     Properties:
-      BucketName: "xadet-pipeline-bucket"
+      BucketName: !Sub ${AWS::StackName}
   Pipeline:
     Type: "AWS::CodePipeline::Pipeline"
     Properties:
-      Name: "DemoPipeline"
+      Name: !Sub ${AWS::StackName}
       ArtifactStore:
           Type: S3
           Location:
@@ -65,7 +65,7 @@ Resources:
                 Version: "1"
                 Provider: "CodeCommit"
               OutputArtifacts :
-                - Name: xadetApp
+                - Name: sourceCode
               Configuration:
                 BranchName: master
                 RepositoryName:
@@ -81,7 +81,7 @@ Resources:
                 Version: "1"
                 Provider: "CodeDeploy"
               InputArtifacts :
-                - Name: xadetApp
+                - Name: sourceCode
               Configuration:
                 ApplicationName:
                   Ref: App
@@ -161,9 +161,6 @@ Resources:
           ToPort: '22'
           IpProtocol: tcp
           CidrIp: 0.0.0.0/0
-      Tags:
-        - Key: Name
-          Value: SSHAccessSG
   AllowWebFromPublic:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -203,7 +200,7 @@ Resources:
             service httpd start
       Tags:
         - Key: Name
-          Value: xadetDemo
+          Value: !Sub ${AWS::StackName}
 Outputs:
   CloneUrl:
     Value:
